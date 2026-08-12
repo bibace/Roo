@@ -33,7 +33,7 @@ background manifestation, packaging, and verification. `WorkspaceCoordinator`,
 the typed runtime protocol, storage repositories, Workspace View, search,
 navigation, configuration semantics, Local Account semantics, and Settings /
 Popup behavior remain shared. Firefox has the persistent product identity
-`roo@bibace` and declares `data_collection_permissions.required` as `['none']`.
+`roo-aws-roles-jumper@bibace` and declares `data_collection_permissions.required` as `['none']`.
 
 Every target retains exactly the named `storage` and `scripting` permissions.
 AWS page access is restricted to the exact existing four-pattern commercial AWS

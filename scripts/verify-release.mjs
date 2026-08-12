@@ -416,8 +416,8 @@ function verifyManifest(name, target, manifest, buildDirectory) {
 
   if (name === 'firefox') {
     const gecko = manifest.browser_specific_settings?.gecko;
-    if (gecko?.id !== 'roo@bibace') {
-      throw new Error('Firefox Gecko ID must be roo@bibace.');
+    if (gecko?.id !== 'roo-aws-roles-jumper@bibace') {
+      throw new Error('Firefox Gecko ID must be roo-aws-roles-jumper@bibace.');
     }
 
     if (JSON.stringify(gecko.data_collection_permissions?.required) !== JSON.stringify(['none'])) {
