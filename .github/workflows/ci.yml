@@ -1,0 +1,86 @@
+name: Roo CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm ls --depth=0
+      - run: npm run audit
+      - run: git diff --check
+
+  chrome:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build:chrome
+      - name: Run Chrome-target MV3 built-extension E2E in Chromium
+        run: xvfb-run -a npm run test:e2e:chrome
+      - run: npm run zip:chrome
+      - run: npm run verify:chrome
+
+  edge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build:edge
+      - name: Run Edge-target MV3 built-extension E2E in Chromium
+        run: xvfb-run -a npm run test:e2e:edge-target
+      - run: npm run zip:edge
+      - run: npm run verify:edge
+
+  firefox:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run build:firefox
+      - run: npm run lint:firefox
+      - run: npm run zip:firefox
+      - run: npm run verify:firefox
+
+  release:
+    needs: [core, chrome, edge, firefox]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm required Roo CI gates
+        env:
+          CORE_RESULT: ${{ needs.core.result }}
+          CHROME_RESULT: ${{ needs.chrome.result }}
+          EDGE_RESULT: ${{ needs.edge.result }}
+          FIREFOX_RESULT: ${{ needs.firefox.result }}
+        run: |
+          test "$CORE_RESULT" = "success"
+          test "$CHROME_RESULT" = "success"
+          test "$EDGE_RESULT" = "success"
+          test "$FIREFOX_RESULT" = "success"

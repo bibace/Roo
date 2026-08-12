@@ -1,0 +1,279 @@
+:root {
+  color: #172033;
+  background: #f6f8fb;
+  font-family: system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+.roo-settings {
+  display: grid;
+  gap: 24px;
+}
+
+.settings-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-logo {
+  display: block;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+}
+
+h1,
+h2 {
+  margin: 0;
+}
+
+h1 {
+  font-size: 28px;
+}
+
+h2 {
+  margin-bottom: 12px;
+  font-size: 18px;
+}
+
+section {
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+  border: 1px solid #d4dbe8;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+h3 {
+  margin: 4px 0 0;
+  font-size: 15px;
+}
+
+h4 {
+  margin: 0;
+  font-size: 15px;
+}
+
+input,
+button {
+  font: inherit;
+}
+
+button {
+  min-width: 88px;
+  padding: 7px 12px;
+  border: 1px solid #4c6fff;
+  border-radius: 6px;
+  color: #ffffff;
+  background: #4c6fff;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.secondary-button {
+  min-width: 0;
+  color: #30405d;
+  background: #ffffff;
+}
+
+.candidate-preview {
+  margin-bottom: 0;
+}
+
+.candidate-preview {
+  display: grid;
+  grid-template-columns: minmax(120px, auto) minmax(0, 1fr);
+  gap: 8px 16px;
+  margin: 0 0 16px;
+}
+
+dt {
+  font-weight: 650;
+}
+
+dd {
+  margin: 0;
+}
+
+.import-error {
+  color: #9b2c2c;
+}
+
+.import-success {
+  color: #216e39;
+}
+
+.configuration-summary,
+.configuration-editor-heading {
+  display: grid;
+  gap: 4px;
+}
+
+.configuration-identity {
+  display: grid;
+  gap: 4px;
+}
+
+.configuration-summary p,
+.configuration-editor-heading p {
+  margin: 0;
+}
+
+.configuration-identity p:first-child,
+.configuration-editor-heading h3 {
+  font-weight: 650;
+}
+
+.configuration-summary > p:last-child,
+.configuration-identity p:last-child,
+.configuration-editor-heading p:not(:first-of-type) {
+  color: #5b6679;
+  font-size: 13px;
+}
+
+.configuration-confirmation {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #d7a7a7;
+  border-radius: 6px;
+  background: #fff8f8;
+}
+
+.configuration-confirmation p {
+  margin: 0;
+}
+
+.configuration-confirmation input {
+  width: 100%;
+  padding: 7px 8px;
+  border: 1px solid #aeb8c8;
+  border-radius: 6px;
+}
+
+.destructive-action {
+  color: #8f2525;
+  border-color: #b75555;
+}
+
+.configuration-entry-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.configuration-editor {
+  width: 100%;
+  min-height: 360px;
+  max-height: 560px;
+  overflow: auto;
+  border: 1px solid #aeb8c8;
+  border-radius: 6px;
+}
+
+.configuration-editor-loading {
+  width: 100%;
+  min-height: 360px;
+  padding: 20px;
+  border: 1px solid #d4dbe8;
+  border-radius: 6px;
+  color: #5b6679;
+  background: #f6f8fb;
+}
+
+.configuration-editor .cm-editor {
+  min-height: 358px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.configuration-editor .cm-scroller {
+  min-height: 358px;
+  max-height: 558px;
+  overflow: auto;
+  font-family: inherit;
+}
+
+.configuration-editor .cm-gutters {
+  border-right: 1px solid #e0e5ef;
+  background: #f6f8fb;
+}
+
+.editor-actions {
+  display: flex;
+  gap: 8px;
+}
+
+details {
+  min-width: 0;
+}
+
+summary {
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.configuration-guide {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+  padding-top: 16px;
+}
+
+.configuration-guide-section {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+
+.configuration-guide p,
+.configuration-guide ul,
+.configuration-guide dl {
+  margin: 0;
+}
+
+.configuration-guide dt:not(:first-child) {
+  margin-top: 8px;
+}
+
+.configuration-guide pre {
+  max-width: 100%;
+  margin: 0;
+  padding: 12px;
+  overflow-x: auto;
+  border-radius: 6px;
+  background: #f6f8fb;
+  white-space: pre;
+}
+
+.configuration-guide code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.about-metadata {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px 16px;
+  margin: 0;
+}
+
+.about-metadata a {
+  color: #3458c5;
+  overflow-wrap: anywhere;
+}

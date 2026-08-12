@@ -1,0 +1,171 @@
+:root {
+  color: #172033;
+  background: #f6f8fb;
+  font-family: system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 520px;
+  margin: 0;
+}
+
+body {
+  min-width: 520px;
+}
+
+.roo-popup {
+  width: 520px;
+  padding: 12px;
+}
+
+.search-input {
+  width: 100%;
+  height: 34px;
+  padding: 6px 9px;
+  border: 1px solid #aeb8c8;
+  border-radius: 6px;
+  color: inherit;
+  background: #ffffff;
+  font: inherit;
+}
+
+.search-input:focus {
+  border-color: #4c6fff;
+  outline: 2px solid #cbd5ff;
+  outline-offset: 1px;
+}
+
+.catalog-statistics {
+  margin: 7px 0 0;
+  color: #6c778b;
+  font-size: 12px;
+}
+
+.result-region {
+  max-height: 360px;
+  margin-top: 8px;
+  overflow-y: auto;
+}
+
+.result-row {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) auto;
+  column-gap: 12px;
+  align-items: center;
+  width: 100%;
+  min-height: 34px;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 6px;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.result-row[data-active='true'] {
+  background: #e1e8ff;
+}
+
+.result-row > span {
+  min-width: 0;
+}
+
+.result-account-id,
+.result-role {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.result-account-id {
+  color: #6c778b;
+  font-size: 12px;
+}
+
+.result-account-name {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-weight: 650;
+}
+
+.result-account-name-text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.result-account-name[data-scrolling='true'] .result-account-name-text {
+  width: max-content;
+  overflow: visible;
+  text-overflow: clip;
+  animation: roo-account-name-pan 6s ease-in-out infinite;
+}
+
+.result-role {
+  font-size: 13px;
+}
+
+.result-role--admin {
+  font-weight: 700;
+}
+
+@keyframes roo-account-name-pan {
+  0%,
+  15% {
+    transform: translateX(0);
+  }
+
+  60%,
+  80% {
+    transform: translateX(var(--roo-account-name-shift));
+  }
+
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .result-account-name[data-scrolling='true'] .result-account-name-text {
+    animation: none;
+  }
+}
+
+.activation-error {
+  margin: 8px 0 0;
+  color: #172033;
+  font-size: 12px;
+}
+
+.catalog-status,
+.settings-error {
+  margin: 8px 0 0;
+  color: #172033;
+  font-size: 12px;
+}
+
+.settings-action {
+  margin-top: 8px;
+  padding: 2px 0;
+  border: 0;
+  color: #5b6679;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.settings-action:hover,
+.settings-action:focus-visible {
+  color: #172033;
+  text-decoration: underline;
+}
