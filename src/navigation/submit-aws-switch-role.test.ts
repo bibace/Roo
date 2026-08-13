@@ -42,6 +42,7 @@ function installPage(options: {
     style: { display: '' },
     submit: vi.fn(),
   };
+  const setTimeoutMock = vi.fn();
 
   vi.stubGlobal('document', {
     body,
@@ -66,9 +67,9 @@ function installPage(options: {
     assign: locationAssign,
   });
   vi.stubGlobal('fetch', fetchMock);
-  vi.stubGlobal('setTimeout', vi.fn());
+  vi.stubGlobal('setTimeout', setTimeoutMock);
 
-  return { body, form };
+  return { body, form, setTimeoutMock };
 }
 
 function response(body: unknown, ok = true): Response {
@@ -207,7 +208,7 @@ describe('submitAwsSwitchRoleInPage', () => {
   });
 
   it('accepts a finite numeric legacy CSRF value and serializes it into the form', async () => {
-    const { form } = installPage({
+    const { form, setTimeoutMock } = installPage({
       sessionData: JSON.stringify({ prismModeEnabled: false }),
     });
     vi.stubGlobal('AWSC', { Auth: { getMbtc: () => 1234567890 } });
@@ -216,6 +217,10 @@ describe('submitAwsSwitchRoleInPage', () => {
       status: 'submitted',
       mode: 'legacy',
     });
+
+    const callback = setTimeoutMock.mock.calls[0]?.[0] as (() => void) | undefined;
+    expect(callback).toBeTypeOf('function');
+    callback?.();
 
     const csrfInput = form.append.mock.calls
       .map(([input]) => input as { name: string; value: string })
@@ -229,7 +234,7 @@ describe('submitAwsSwitchRoleInPage', () => {
   });
 
   it('accepts a non-empty string legacy CSRF value unchanged', async () => {
-    const { form } = installPage({
+    const { form, setTimeoutMock } = installPage({
       sessionData: JSON.stringify({ prismModeEnabled: false }),
     });
     vi.stubGlobal('AWSC', { Auth: { getMbtc: () => 'legacy-string-csrf' } });
@@ -239,10 +244,40 @@ describe('submitAwsSwitchRoleInPage', () => {
       mode: 'legacy',
     });
 
+    const callback = setTimeoutMock.mock.calls[0]?.[0] as (() => void) | undefined;
+    expect(callback).toBeTypeOf('function');
+    callback?.();
+
     const csrfInput = form.append.mock.calls
       .map(([input]) => input as { name: string; value: string })
       .find((input) => input.name === 'csrf');
     expect(csrfInput?.value).toBe('legacy-string-csrf');
+  });
+
+  it('keeps the Legacy form off-DOM until one callback appends and submits it', async () => {
+    const { body, form, setTimeoutMock } = installPage({
+      sessionData: JSON.stringify({ prismModeEnabled: false }),
+    });
+    const csrf = 'page-local-csrf';
+    vi.stubGlobal('AWSC', { Auth: { getMbtc: () => csrf } });
+
+    const result = await submitAwsSwitchRoleInPage(request);
+
+    expect(result).toEqual({ status: 'submitted', mode: 'legacy' });
+    expect(JSON.stringify(result)).not.toContain(csrf);
+    expect(body?.append).not.toHaveBeenCalled();
+    expect(form.submit).not.toHaveBeenCalled();
+    expect(setTimeoutMock).toHaveBeenCalledTimes(1);
+
+    const callback = setTimeoutMock.mock.calls[0]?.[0] as (() => void) | undefined;
+    expect(callback).toBeTypeOf('function');
+    callback?.();
+
+    expect(body?.append).toHaveBeenCalledWith(form);
+    expect(form.submit).toHaveBeenCalledTimes(1);
+    expect((body?.append as ReturnType<typeof vi.fn>).mock.invocationCallOrder[0]).toBeLessThan(
+      form.submit.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+    );
   });
 
   it.each([

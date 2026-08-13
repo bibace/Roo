@@ -1,12 +1,18 @@
 import type { RawAwsConsolePageSnapshot } from './types';
 
 export function readAwsConsolePageSnapshot(): RawAwsConsolePageSnapshot {
-  const readNonEmptyString = (value: unknown): string | null => {
-    if (typeof value !== 'string' || value.trim().length === 0) {
+  const readAccountString = (value: unknown): string | null => {
+    if (typeof value !== 'string') {
       return null;
     }
 
-    return value;
+    const trimmedValue = value.trim();
+
+    if (trimmedValue.length === 0 || trimmedValue.length > 63) {
+      return null;
+    }
+
+    return trimmedValue;
   };
 
   const consoleNavService = (
@@ -20,12 +26,12 @@ export function readAwsConsolePageSnapshot(): RawAwsConsolePageSnapshot {
     }
   ).ConsoleNavService;
   const accountInfo = consoleNavService?.AccountInfo;
-  const loginFromConsoleNav = readNonEmptyString(accountInfo?.loginDisplayNameAccount);
-  const roleFromConsoleNav = readNonEmptyString(accountInfo?.roleDisplayNameAccount);
-  const loginFromDom = readNonEmptyString(
+  const loginFromConsoleNav = readAccountString(accountInfo?.loginDisplayNameAccount);
+  const roleFromConsoleNav = readAccountString(accountInfo?.roleDisplayNameAccount);
+  const loginFromDom = readAccountString(
     document.querySelector('#awsc-login-display-name-account')?.textContent,
   );
-  const roleFromDom = readNonEmptyString(
+  const roleFromDom = readAccountString(
     document.querySelector('#awsc-role-display-name-account')?.textContent,
   );
 

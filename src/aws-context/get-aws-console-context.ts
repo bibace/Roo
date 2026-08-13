@@ -39,6 +39,20 @@ function parseInjectedSnapshot(value: unknown): RawAwsConsolePageSnapshot | null
   }
 
   const candidate = snapshot as Record<string, unknown>;
+  const expectedKeys = new Set([
+    'loginDisplayNameAccount',
+    'roleDisplayNameAccount',
+    'multiSession',
+    'source',
+  ]);
+  const actualKeys = Reflect.ownKeys(candidate);
+
+  if (
+    actualKeys.length !== expectedKeys.size ||
+    actualKeys.some((key) => typeof key !== 'string' || !expectedKeys.has(key))
+  ) {
+    return null;
+  }
 
   if (
     !isAccountValue(candidate.loginDisplayNameAccount) ||

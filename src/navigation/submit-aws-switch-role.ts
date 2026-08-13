@@ -259,7 +259,9 @@ export async function submitAwsSwitchRoleInPage(
     return unavailable('LEGACY_CSRF_UNAVAILABLE');
   }
 
-  if (!document.body) {
+  const body = document.body;
+
+  if (!body) {
     return unavailable('DOCUMENT_BODY_UNAVAILABLE');
   }
 
@@ -289,8 +291,8 @@ export async function submitAwsSwitchRoleInPage(
     form.append(input);
   }
 
-  document.body.append(form);
   globalThis.setTimeout(() => {
+    body.append(form);
     form.submit();
   }, 0);
 

@@ -57,6 +57,21 @@ describe('getAwsConsoleContextProbeForTab', () => {
     });
   });
 
+  it('rejects an injected snapshot with extra fields', async () => {
+    executeScript.mockResolvedValue([{
+      frameId: 0,
+      result: {
+        ...validSnapshot(),
+        token: 'must-not-cross-the-boundary',
+      },
+    }]);
+
+    await expect(getAwsConsoleContextProbeForTab(9, supportedAwsUrl)).resolves.toEqual({
+      tabId: 9,
+      result: { status: 'unavailable' },
+    });
+  });
+
   it('falls back to ISOLATED exactly once after MAIN execution fails', async () => {
     executeScript
       .mockRejectedValueOnce(new Error('MAIN execution failed'))

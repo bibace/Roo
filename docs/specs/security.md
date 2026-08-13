@@ -40,6 +40,16 @@ operations.
 Remote configuration, where discussed as an ownership concept, MUST remain
 data only; Roo v1 MUST perform no catalog-network operations.
 
+MAIN-world execution intentionally shares the AWS page's JavaScript and DOM
+realm. Roo treats an already-compromised authenticated AWS Console origin as
+outside Roo's isolation guarantee and does not claim to sandbox arbitrary script
+execution that already exists inside that origin. Roo still treats all
+page-derived metadata and destinations as untrusted data. Page-derived sign-in
+hosts and returned destinations MUST remain strictly validated, and no
+page-derived credential or session secret may cross into extension state. Roo
+MUST NOT use HTML or script injection sinks, including `innerHTML`,
+`outerHTML`, `insertAdjacentHTML`, `eval`, or `new Function`.
+
 Extension contexts MUST NOT perform AWS network requests.
 
 The only permitted runtime network request is the explicit-user-initiated
@@ -80,9 +90,10 @@ results MUST NOT receive AWS CSRF data.
 The only permitted CSRF interaction is the one-shot MAIN-world Jump executor
 after explicit user destination activation. In Legacy mode, that executor MUST
 obtain AWSC.Auth.getMbtc() inside the active supported AWS Console page, place
-the value directly into the transient fixed-endpoint Switch Role form, submit
-the form, and return no CSRF value. Prism mode MUST NOT require or send a CSRF
-value.
+the value directly into an off-DOM transient fixed-endpoint Switch Role form,
+schedule one callback, append the form, and submit it immediately in that same
+callback. It MUST return no CSRF value. Prism mode MUST NOT require or send a
+CSRF value.
 
 The CSRF value MUST never cross from page execution into extension state.
 

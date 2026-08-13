@@ -85,6 +85,12 @@ usable tab with a numeric ID and string URL, require
 `isSupportedAwsConsoleUrl(tab.url)`, and execute the submission function in
 MAIN world against that tab's top frame. It MUST NOT create a second tab.
 
+MAIN-world execution shares the AWS page's JavaScript and DOM realm. Roo treats
+an already-compromised authenticated AWS Console origin as outside Roo's
+isolation guarantee; the one-shot executor is not a sandbox against arbitrary
+script execution that already exists in that origin. Page-derived metadata and
+destinations remain untrusted data and are validated before use.
+
 The executor MUST read `meta[name="awsc-session-data"]` in MAIN world and use
 only `prismModeEnabled`, `signInEndpoint`, and `sessionDifferentiator`. The
 selected commercial sign-in hostname is validated before use. Mode selection
@@ -95,7 +101,10 @@ Legacy:
 POST form whose target is `_top`, whose action is
 `https://<validated-signin-host>/switchrole`, and whose fields are exactly
 `mfaNeeded`, `action`, `src`, `csrf`, `roleName`, `account`, `color`,
-`redirect_uri`, and `displayName`. `redirect_uri` MUST be derived from the
+`redirect_uri`, and `displayName`. The form and its inputs MUST be constructed
+off-DOM. The executor MUST schedule one callback that appends the form and
+calls `form.submit()` immediately in that same callback; it MUST NOT expose the
+form to the DOM before the callback. `redirect_uri` MUST be derived from the
 active supported AWS Console page URL and is not configuration.
 
 Prism:
@@ -117,6 +126,19 @@ accepted for the page-local path. Scheduled form submission and scheduled
 navigation occur only after the injected execution has returned its successful
 result. The executor returns only submitted/unavailable status and mode; it
 does not return session metadata, destinations, or CSRF data to extension code.
+
+The page snapshot reader is limited to
+`ConsoleNavService.AccountInfo.loginDisplayNameAccount`,
+`ConsoleNavService.AccountInfo.roleDisplayNameAccount`,
+`#awsc-login-display-name-account` text, `#awsc-role-display-name-account`
+text, and `meta[name="awsc-session-data"]` content. From the metadata it
+consumes only `prismModeEnabled`. Page-side identity strings are accepted only
+when they are strings, trimmed, non-empty, and no longer than 63 characters;
+definitive identity grammar validation remains in the extension context. The
+accepted injected snapshot has exactly the four keys
+`loginDisplayNameAccount`, `roleDisplayNameAccount`, `multiSession`, and
+`source`. It MUST NOT read cookies, browser storage, credentials, tokens, CSRF,
+or AWS API responses.
 
 GET prefill navigation is not Roo's Jump mechanism.
 
@@ -142,7 +164,9 @@ The builder MUST construct the fixed structured request without browser or page
 state. Target data MUST NOT change the endpoint or override the fixed request
 shape. The executor MUST obtain page-local `AWSC.Auth.getMbtc()` only during
 explicit Jump activation, place it directly into the transient form, and never
-return it to extension code.
+return it to extension code. The executor MUST NOT use HTML or script injection
+sinks such as `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `eval`, or
+`new Function`.
 
 The navigation boundary MUST generate destinations only from validated
 structured account and role data. It MUST NOT read, store, request, derive,
