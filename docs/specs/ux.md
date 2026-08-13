@@ -26,6 +26,11 @@ Popup
 → Jump
 ```
 
+Result virtualization is an internal Popup performance implementation. It
+limits rendered result rows with fixed row geometry and spacers while
+preserving the same Search → Highlight → Jump behavior, result ordering,
+pointer selection, keyboard navigation, and Enter activation.
+
 The Popup MUST provide exactly one low-emphasis secondary action labeled
 `Settings` after the result/status region. Settings activation MUST use the
 browser runtime Options API.

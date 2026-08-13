@@ -13,6 +13,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { createServer, type AddressInfo } from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
+import type { JumpTarget } from '../src/domain/jump-target';
 
 declare const chrome: {
   storage: {
@@ -42,6 +43,53 @@ export interface RooExtension {
   readStorage: (keys: string[]) => Promise<Record<string, unknown>>;
   watchExtensionPage: (page: Page) => void;
   assertNoRuntimeErrors: () => Promise<void>;
+}
+
+export const SEARCH_SCALE_TARGET_COUNT = 1_000;
+
+export function createSearchScaleCatalogSeed(
+  targetCount = SEARCH_SCALE_TARGET_COUNT,
+): { storage: Record<string, unknown>; targets: JumpTarget[] } {
+  const project = 'scale-search';
+  const role = 'platform/scale-readonly';
+  const accounts: Record<string, string> = {};
+  const targets: JumpTarget[] = [];
+
+  for (let index = 0; index < targetCount; index += 1) {
+    const environment = `env-${String(index).padStart(4, '0')}`;
+    const accountId = String(100_000_000_000 + index);
+    const accountName = `${project}-${environment}`;
+    accounts[environment] = accountId;
+    targets.push({
+      accountId,
+      accountName,
+      project,
+      environment,
+      role,
+      roleShortName: 'scale-readonly',
+    });
+  }
+
+  return {
+    storage: {
+      'roo-configuration-v1': {
+        storageVersion: 1,
+        catalogVersion: 1,
+        source: { kind: 'uploaded', fileName: 'search-scale.json' },
+        config: {
+          version: 1,
+          defaults: { enabled: false },
+          projects: {
+            [project]: {
+              accounts,
+              roles: { [role]: {} },
+            },
+          },
+        },
+      },
+    },
+    targets,
+  };
 }
 
 export interface LegacySwitchRolePostExpectation {
