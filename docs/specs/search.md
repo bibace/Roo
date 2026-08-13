@@ -26,6 +26,21 @@ Search MUST cover these Jump Target fields:
 
 Each textual field MUST contribute its complete normalized value and logical segments split on `/`, `-`, `_`, and whitespace. Duplicate terms MUST be removed internally. Stored JumpTarget values MUST NOT be lowercased or otherwise modified.
 
+## Search index
+
+Roo MUST build a pure in-memory search index when the target collection changes.
+Index construction performs role-alias derivation, value normalization, logical
+segment splitting, term deduplication, and exact-value construction once per
+target. The index MUST retain each original JumpTarget by reference, MUST NOT
+mutate targets, and MUST NOT be persisted or depend on React, browser APIs,
+storage, Workspace, network, or navigation.
+
+Repeated query execution MUST normalize only the query and search the prebuilt
+terms and exact values. It MUST NOT repeat target-field normalization, role
+alias derivation, logical splitting, or index construction for each keystroke.
+The compatibility `searchJumpTargets()` API remains pure and builds an index
+for its individual invocation before delegating to the indexed query path.
+
 ## Role aliases
 
 A `roleShortName` equal to or ending with `readonly` MUST receive `readonly`, `read`, and `ro` aliases. A `roleShortName` equal to or ending with `admin` MUST receive `admin` and `adm` aliases. No other built-in aliases exist, and aliases MUST NOT be configurable in this phase.

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { JumpTarget } from '../domain/jump-target';
-import { searchJumpTargets } from './search-jump-targets';
+import {
+  searchJumpTargetIndex,
+  searchJumpTargets,
+} from './search-jump-targets';
+import { buildJumpTargetSearchIndex } from './search-index';
 
 function makeTarget(overrides: Partial<JumpTarget> = {}): JumpTarget {
   return {
@@ -14,24 +18,55 @@ function makeTarget(overrides: Partial<JumpTarget> = {}): JumpTarget {
   };
 }
 
-function resultNames(targets: readonly JumpTarget[], query: string): string[] {
-  return searchJumpTargets(targets, query).map((target) => `${target.accountName}|${target.role}`);
+type SearchFunction = (targets: readonly JumpTarget[], query: string) => JumpTarget[];
+
+const searchFunctions: readonly SearchFunction[] = [
+  searchJumpTargets,
+  (targets, query) => searchJumpTargetIndex(buildJumpTargetSearchIndex(targets), query),
+];
+
+function resultNames(
+  targets: readonly JumpTarget[],
+  query: string,
+  search: SearchFunction,
+): string[] {
+  return search(targets, query).map((target) => `${target.accountName}|${target.role}`);
+}
+
+function expectSearchResults(
+  targets: readonly JumpTarget[],
+  query: string,
+  expected: readonly JumpTarget[],
+) {
+  for (const search of searchFunctions) {
+    expect(search(targets, query)).toEqual(expected);
+  }
+}
+
+function expectResultNames(
+  targets: readonly JumpTarget[],
+  query: string,
+  expected: readonly string[],
+) {
+  for (const search of searchFunctions) {
+    expect(resultNames(targets, query, search)).toEqual(expected);
+  }
 }
 
 describe('searchJumpTargets', () => {
   it('returns no results below three characters and searches at exactly three', () => {
     const targets = [makeTarget({ accountName: 'atlas-prod', environment: 'prod' })];
 
-    expect(searchJumpTargets(targets, 'a')).toEqual([]);
-    expect(searchJumpTargets(targets, 'at')).toEqual([]);
-    expect(searchJumpTargets(targets, 'atl')).toEqual(targets);
+    expectSearchResults(targets, 'a', []);
+    expectSearchResults(targets, 'at', []);
+    expectSearchResults(targets, 'atl', targets);
   });
 
   it('trims, collapses whitespace, and matches case-insensitively', () => {
     const targets = [makeTarget({ accountName: 'atlas-prod', environment: 'prod' })];
 
-    expect(searchJumpTargets(targets, '  ATL   PROD  ')).toEqual(targets);
-    expect(searchJumpTargets(targets, 'atlas prod')).toEqual(targets);
+    expectSearchResults(targets, '  ATL   PROD  ', targets);
+    expectSearchResults(targets, 'atlas prod', targets);
   });
 
   it('does not modify the input target array or targets', () => {
@@ -54,13 +89,13 @@ describe('searchJumpTargets', () => {
       }),
     ];
 
-    expect(searchJumpTargets(targets, 'atlas')).toEqual(targets);
-    expect(searchJumpTargets(targets, 'prod')).toEqual(targets);
-    expect(searchJumpTargets(targets, 'atlas-prod')).toEqual(targets);
-    expect(searchJumpTargets(targets, '222222')).toEqual(targets);
-    expect(searchJumpTargets(targets, 'platform/data')).toEqual(targets);
-    expect(searchJumpTargets(targets, 'data-engineer')).toEqual(targets);
-    expect(searchJumpTargets(targets, 'atlas data')).toEqual(targets);
+    expectSearchResults(targets, 'atlas', targets);
+    expectSearchResults(targets, 'prod', targets);
+    expectSearchResults(targets, 'atlas-prod', targets);
+    expectSearchResults(targets, '222222', targets);
+    expectSearchResults(targets, 'platform/data', targets);
+    expectSearchResults(targets, 'data-engineer', targets);
+    expectSearchResults(targets, 'atlas data', targets);
   });
 
   it('supports readonly and admin aliases only for matching role suffixes', () => {
@@ -72,28 +107,30 @@ describe('searchJumpTargets', () => {
       makeTarget({ accountName: 'atlas-data', role: 'platform/data/data-engineer', roleShortName: 'data-engineer' }),
     ];
 
-    expect(resultNames(targets, 'atlas readonly')).toEqual([
+    expectResultNames(targets, 'atlas readonly', [
       'atlas-data-readonly|platform/data-readonly',
       'atlas-security-readonly|platform/security-readonly',
     ]);
-    expect(resultNames(targets, 'atlas read')).toEqual([
+    expectResultNames(targets, 'atlas read', [
       'atlas-data-readonly|platform/data-readonly',
       'atlas-security-readonly|platform/security-readonly',
     ]);
-    expect(resultNames(targets, 'atlas ro')).toEqual([
+    expectResultNames(targets, 'atlas ro', [
       'atlas-data-readonly|platform/data-readonly',
       'atlas-security-readonly|platform/security-readonly',
     ]);
-    expect(resultNames(targets, 'atlas admin')).toEqual([
+    expectResultNames(targets, 'atlas admin', [
       'atlas-data-admin|platform/data-admin',
       'atlas-security-admin|platform/security-admin',
     ]);
-    expect(resultNames(targets, 'atlas adm')).toEqual([
+    expectResultNames(targets, 'atlas adm', [
       'atlas-data-admin|platform/data-admin',
       'atlas-security-admin|platform/security-admin',
     ]);
-    expect(resultNames(targets, 'atlas adm')).not.toContain('atlas-data|platform/data/data-engineer');
-    expect(resultNames(targets, 'atlas ro')).not.toContain('atlas-data|platform/data/data-engineer');
+    for (const search of searchFunctions) {
+      expect(resultNames(targets, 'atlas adm', search)).not.toContain('atlas-data|platform/data/data-engineer');
+      expect(resultNames(targets, 'atlas ro', search)).not.toContain('atlas-data|platform/data/data-engineer');
+    }
   });
 
   it('requires every query token and is independent of token order', () => {
@@ -103,9 +140,13 @@ describe('searchJumpTargets', () => {
       makeTarget({ accountName: 'atlas-dev', environment: 'dev', role: 'platform/security-admin', roleShortName: 'security-admin' }),
     ];
 
-    expect(resultNames(targets, 'atlas prod admin')).toEqual(['atlas-prod|platform/security-admin']);
-    expect(resultNames(targets, 'atlas prod admin')).toEqual(resultNames(targets, 'admin atlas prod'));
-    expect(resultNames(targets, 'atlas prod')).toEqual([
+    expectResultNames(targets, 'atlas prod admin', ['atlas-prod|platform/security-admin']);
+    for (const search of searchFunctions) {
+      expect(resultNames(targets, 'atlas prod admin', search)).toEqual(
+        resultNames(targets, 'admin atlas prod', search),
+      );
+    }
+    expectResultNames(targets, 'atlas prod', [
       'atlas-prod|platform/security-admin',
       'atlas-prod|platform/security-readonly',
     ]);
@@ -132,8 +173,8 @@ describe('searchJumpTargets', () => {
       'atlas prod-dev|platform/security-readonly',
     ];
 
-    expect(resultNames(targets, 'atlas prod')).toEqual(expectedOrder);
-    expect(resultNames(targets, 'prod atlas')).toEqual(expectedOrder);
+    expectResultNames(targets, 'atlas prod', expectedOrder);
+    expectResultNames(targets, 'prod atlas', expectedOrder);
   });
 
   it('ranks whole-query exact matches first', () => {
@@ -142,7 +183,7 @@ describe('searchJumpTargets', () => {
       makeTarget({ accountName: 'atlas-prod', environment: 'prod' }),
     ];
 
-    expect(resultNames(targets, 'atlas-prod')).toEqual([
+    expectResultNames(targets, 'atlas-prod', [
       'atlas-prod|platform/security-readonly',
       'atlas-production|platform/security-readonly',
     ]);
@@ -154,7 +195,9 @@ describe('searchJumpTargets', () => {
       makeTarget({ accountName: 'atlas-prod', environment: 'prod' }),
     ];
 
-    expect(resultNames(targets, 'atlas prod')[0]).toBe('atlas-prod|platform/security-readonly');
+    for (const search of searchFunctions) {
+      expect(resultNames(targets, 'atlas prod', search)[0]).toBe('atlas-prod|platform/security-readonly');
+    }
   });
 
   it('excludes internal substring matches while retaining exact and prefix matches', () => {
@@ -166,7 +209,7 @@ describe('searchJumpTargets', () => {
       makeTarget({ accountName: 'atlas-myprod', environment: 'myprod', project: 'atlas' }),
     ];
 
-    expect(resultNames(targets, 'prod')).toEqual([
+    expectResultNames(targets, 'prod', [
       'atlas-prod|platform/security-readonly',
       'atlas-production|platform/security-readonly',
     ]);
@@ -180,7 +223,7 @@ describe('searchJumpTargets', () => {
       makeTarget({ accountName: 'atlas-myprod', project: 'atlas', environment: 'myprod' }),
     ];
 
-    expect(resultNames(targets, 'prod')).toEqual(['atlas-prod|platform/security-readonly']);
+    expectResultNames(targets, 'prod', ['atlas-prod|platform/security-readonly']);
   });
 
   it('uses account name, role, and account ID for deterministic ties', () => {
@@ -197,24 +240,30 @@ describe('searchJumpTargets', () => {
       makeTarget({ accountId: '111111111111' }),
     ];
 
-    expect(resultNames(accountNameTargets, 'prod')).toEqual([
+    expectResultNames(accountNameTargets, 'prod', [
       'atlas-prod|platform/security-readonly',
       'zeta-prod|platform/security-readonly',
     ]);
-    expect(resultNames(roleTargets, 'plat')).toEqual([
+    expectResultNames(roleTargets, 'plat', [
       'atlas-dev|platform/a-role',
       'atlas-dev|platform/z-role',
     ]);
-    expect(searchJumpTargets(accountIdTargets, 'atlas').map((target) => target.accountId)).toEqual([
-      '111111111111',
-      '222222222222',
-    ]);
+    for (const search of searchFunctions) {
+      expect(search(accountIdTargets, 'atlas').map((target) => target.accountId)).toEqual([
+        '111111111111',
+        '222222222222',
+      ]);
+    }
   });
 
   it('does not depend on input target order', () => {
     const first = makeTarget({ accountName: 'atlas-prod', role: 'platform/z-role', roleShortName: 'z-role' });
     const second = makeTarget({ accountName: 'atlas-dev', role: 'platform/a-role', roleShortName: 'a-role' });
 
-    expect(resultNames([first, second], 'atl')).toEqual(resultNames([second, first], 'atl'));
+    for (const search of searchFunctions) {
+      expect(resultNames([first, second], 'atl', search)).toEqual(
+        resultNames([second, first], 'atl', search),
+      );
+    }
   });
 });
